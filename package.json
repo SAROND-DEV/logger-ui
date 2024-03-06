@@ -20,6 +20,7 @@
         "pinia": "^2.1.7",
         "uuid": "^9.0.1",
         "vue": "^3.4.15",
+        "vue-highlight-words": "^3.0.1",
         "vue-router": "^4.2.5"
     },
     "devDependencies": {

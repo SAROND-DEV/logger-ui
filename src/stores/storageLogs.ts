@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { WampSocketSubscribeItem } from '@/modules/wamp/types'
+import type { WampSocketSubscribeItem, WampSocketSubscribeItemLevel } from '@/modules/wamp/types'
 import WAMPLogger from '@/modules/wamp/logger'
 
 export const useStorageLogs = defineStore('storageLogs', () => {
@@ -23,5 +23,8 @@ export const useStorageLogs = defineStore('storageLogs', () => {
         })
     })
 
-    return { logs, lazyLoading }
+    const filterLogsByLevel = (level?: WampSocketSubscribeItemLevel) =>
+        logs.value.filter((log) => !level || log.Level === level)
+
+    return { logs, lazyLoading, filterLogsByLevel }
 })
