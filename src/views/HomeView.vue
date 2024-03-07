@@ -31,51 +31,43 @@
             </div>
         </div>
 
-        <div v-bind="containerProps" class="overflow-auto p-2">
+        <div v-bind="containerProps" class="px-4">
             <div v-bind="wrapperProps">
-                <div v-for="{ index, data } in list" :key="index" class="mb-1">
-                    <div
-                        class="flex"
-                        :class="{
-                            'text-neutral-800': data.Level === WampSocketSubscribeItemLevel.DEBUG,
-                            'text-red-500': data.Level === WampSocketSubscribeItemLevel.ERROR,
-                            'text-red-800': data.Level === WampSocketSubscribeItemLevel.FATAL,
-                            'text-blue-500': data.Level === WampSocketSubscribeItemLevel.INFO,
-                            'text-cyan-600': data.Level === WampSocketSubscribeItemLevel.TRACE
-                        }"
-                    >
-                        <Highlighter
-                            class="min-w-16 mr-4"
-                            highlightClassName="highlight"
-                            :searchWords="[search]"
-                            :autoEscape="true"
-                            :textToHighlight="data.Timestamp"
-                        />
+                <div
+                    v-for="{ index, data } in list"
+                    :key="index"
+                    class="flex"
+                    :class="itemLogClasses(data)"
+                >
+                    <Highlighter
+                        class="w-48 mr-4"
+                        highlightClassName="highlight"
+                        :searchWords="[search]"
+                        :autoEscape="true"
+                        :textToHighlight="data.Timestamp"
+                    />
+                    <Highlighter
+                        class="w-12 mr-8"
+                        highlightClassName="highlight"
+                        :searchWords="[search]"
+                        :autoEscape="true"
+                        :textToHighlight="data.Level"
+                    />
 
-                        <Highlighter
-                            class="min-w-16 mr-4"
-                            highlightClassName="highlight"
-                            :searchWords="[search]"
-                            :autoEscape="true"
-                            :textToHighlight="data.Level"
-                        />
+                    <Highlighter
+                        class="flex-1 mr-12"
+                        highlightClassName="highlight"
+                        :searchWords="[search]"
+                        :autoEscape="true"
+                        :textToHighlight="data.Message"
+                    />
 
-                        <Highlighter
-                            class="min-w-16 mr-4"
-                            highlightClassName="highlight"
-                            :searchWords="[search]"
-                            :autoEscape="true"
-                            :textToHighlight="data.Message"
-                        />
-
-                        <Highlighter
-                            class="min-w-16 mr-4"
-                            highlightClassName="highlight"
-                            :searchWords="[search]"
-                            :autoEscape="true"
-                            :textToHighlight="data.Source"
-                        />
-                    </div>
+                    <Highlighter
+                        highlightClassName="highlight"
+                        :searchWords="[search]"
+                        :autoEscape="true"
+                        :textToHighlight="data.Source"
+                    />
                 </div>
             </div>
         </div>
@@ -85,7 +77,7 @@
 <script setup lang="ts">
 import { useStorageLogs } from '../stores/storageLogs'
 import { useVirtualList } from '@vueuse/core'
-import { WampSocketSubscribeItemLevel } from '@/modules/wamp/types'
+import { WampSocketSubscribeItemLevel, type WampSocketSubscribeItem } from '@/modules/wamp/types'
 import { computed, ref } from 'vue'
 import Highlighter from 'vue-highlight-words'
 
@@ -102,5 +94,13 @@ const logs = computed(() => {
 
 const { list, containerProps, wrapperProps } = useVirtualList(logs, {
     itemHeight: 50
+})
+
+const itemLogClasses = (log: WampSocketSubscribeItem) => ({
+    'text-neutral-800': log.Level === WampSocketSubscribeItemLevel.DEBUG,
+    'text-red-500': log.Level === WampSocketSubscribeItemLevel.ERROR,
+    'text-red-800': log.Level === WampSocketSubscribeItemLevel.FATAL,
+    'text-blue-500': log.Level === WampSocketSubscribeItemLevel.INFO,
+    'text-cyan-600': log.Level === WampSocketSubscribeItemLevel.TRACE
 })
 </script>
