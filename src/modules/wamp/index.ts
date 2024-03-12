@@ -115,7 +115,7 @@ export class WampSocket {
      */
     private heartbeat() {
         this.heartbeatInterval = setInterval(() => {
-            this.socket.send(JSON.stringify([WAMPType.HEARTBEAT, this.heartbeatCounter++]))
+            this.socket.send(JSON.stringify([WAMPType.HEARTBEAT, ++this.heartbeatCounter]))
             this.socket.addEventListener('message', (ev) => {
                 const [action, counter] = JSON.parse(ev.data)
                 if (action !== WAMPType.HEARTBEAT || counter !== this.heartbeatCounter) {
