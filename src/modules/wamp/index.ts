@@ -62,11 +62,11 @@ export class WampSocket {
         this.socket.send(JSON.stringify([WAMPType.CALL, id, url, ...args]))
         return new Promise<any>((resolve) => {
             this.socket.addEventListener('message', ({ data }) => {
-                const parsedData = JSON.parse(data)
+                const [_action, idServer, dataServer] = JSON.parse(data)
 
-                if (parsedData[1] === id) {
+                if (idServer === id) {
                     clearTimeout(timeout)
-                    return resolve(parsedData[2])
+                    return resolve(dataServer)
                 }
             })
         })
@@ -83,10 +83,10 @@ export class WampSocket {
     public subscribe(method: string, callback: (data: WampSocketSubscribeData) => void) {
         const url = new URL(method, this.options.baseURL)
         const handlerCallback = ({ data }: MessageEvent<string>) => {
-            const parsedData = JSON.parse(data)
+            const [_action, idServer, dataServer] = JSON.parse(data)
 
-            if (parsedData[1] === url.toString()) {
-                callback(parsedData[2])
+            if (idServer === url.toString()) {
+                callback(dataServer)
             }
         }
 
@@ -116,6 +116,12 @@ export class WampSocket {
     private heartbeat() {
         this.heartbeatInterval = setInterval(() => {
             this.socket.send(JSON.stringify([WAMPType.HEARTBEAT, this.heartbeatCounter++]))
+            this.socket.addEventListener('message', (ev) => {
+                const [action, counter] = JSON.parse(ev.data)
+                if (action !== WAMPType.HEARTBEAT || counter !== this.heartbeatCounter) {
+                    throw new Error('The server incorrectly responded to the ping')
+                }
+            })
         }, this.options.heartbeatTimeout)
     }
 
@@ -133,8 +139,8 @@ export class WampSocket {
         return new Promise<this>((resolve, reject) => {
             this.socket.addEventListener('message', (ev) => {
                 this.handleErrorMessageData(ev)
-                const parsedData = JSON.parse(ev.data)
-                if (parsedData[0] === WAMPType.WELCOME) {
+                const [action] = JSON.parse(ev.data)
+                if (action === WAMPType.WELCOME) {
                     this.heartbeat()
                     return resolve(this)
                 }
@@ -160,9 +166,9 @@ export class WampSocket {
      * @throws Выбрасывает ошибку, если они содержат ошибку вызова WAMP
      */
     private handleErrorMessageData({ data }: MessageEvent<any>) {
-        const parsedData = JSON.parse(data)
-        if (parsedData[0] === WAMPType.CALL_ERROR) {
-            throw new Error(parsedData)
+        const [action] = JSON.parse(data)
+        if (action === WAMPType.CALL_ERROR) {
+            throw new Error(JSON.parse(data))
         }
     }
 }
