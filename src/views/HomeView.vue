@@ -29,47 +29,29 @@
                     required
                 />
             </div>
+
+            <div class="flex items-center">
+                <span>
+                    Найдено элементов: {{ matchesTotal.length ? matchCurrent + 1 : 0 }} /
+                    {{ matchesTotal.length }}
+                </span>
+
+                <div class="mx-4">
+                    <span class="mx-2 cursor-pointer" @click="gotoNextMatch">Вперед</span>
+                    <span class="mx-2 cursor-pointer" @click="gotoPrevMatch">Назад</span>
+                </div>
+            </div>
         </div>
 
         <div v-bind="containerProps" class="px-4">
             <div v-bind="wrapperProps">
                 <div
-                    v-for="{ index, data } in list"
+                    v-for="(render, index) in renderHighlightText"
                     :key="index"
                     class="flex"
-                    :class="itemLogClasses(data)"
-                >
-                    <Highlighter
-                        class="w-48 mr-4"
-                        highlightClassName="highlight"
-                        :searchWords="search.split(' ')"
-                        :autoEscape="true"
-                        :textToHighlight="data.Timestamp"
-                    />
-
-                    <Highlighter
-                        class="w-12 mr-8"
-                        highlightClassName="highlight"
-                        :searchWords="search.split(' ')"
-                        :autoEscape="true"
-                        :textToHighlight="data.Level"
-                    />
-
-                    <Highlighter
-                        class="flex-1 mr-12"
-                        highlightClassName="highlight"
-                        :searchWords="search.split(' ')"
-                        :autoEscape="true"
-                        :textToHighlight="data.Message"
-                    />
-
-                    <Highlighter
-                        highlightClassName="highlight"
-                        :searchWords="search.split(' ')"
-                        :autoEscape="true"
-                        :textToHighlight="data.Source"
-                    />
-                </div>
+                    :class="itemLogClasses(render)"
+                    v-html="render.html"
+                />
             </div>
         </div>
     </div>
@@ -79,10 +61,11 @@
 import { useStorageLogs } from '../stores/storageLogs'
 import { useVirtualList } from '@vueuse/core'
 import { WampSocketSubscribeItemLevel, type WampSocketSubscribeItem } from '@/modules/wamp/types'
-import { computed, ref } from 'vue'
-import Highlighter from 'vue-highlight-words'
+import { computed, ref, watch } from 'vue'
 
 const search = ref('')
+const matchCurrent = ref<number>(0)
+const matchesTotal = ref<string[]>([])
 const levels = Object.values(WampSocketSubscribeItemLevel)
 const level = ref('ALL')
 const storageLogs = useStorageLogs()
@@ -93,15 +76,80 @@ const logs = computed(() => {
         : storageLogs.logs
 })
 
+watch(search, () => {
+    matchesTotal.value = []
+})
+
+watch(matchesTotal, () => {
+    matchCurrent.value = 0
+})
+
 const { list, containerProps, wrapperProps } = useVirtualList(logs, {
     itemHeight: 50
 })
 
-const itemLogClasses = (log: WampSocketSubscribeItem) => ({
+const itemLogClasses = (log: Pick<WampSocketSubscribeItem, 'Level'>) => ({
     'text-neutral-800': log.Level === WampSocketSubscribeItemLevel.DEBUG,
     'text-red-500': log.Level === WampSocketSubscribeItemLevel.ERROR,
     'text-red-800': log.Level === WampSocketSubscribeItemLevel.FATAL,
     'text-blue-500': log.Level === WampSocketSubscribeItemLevel.INFO,
     'text-cyan-600': log.Level === WampSocketSubscribeItemLevel.TRACE
 })
+
+const renderHighlightText = computed(() =>
+    list.value.map((item) => ({
+        html: highlightText(item.data),
+        Level: item.data.Level
+    }))
+)
+
+const highlightText = (item: WampSocketSubscribeItem) => {
+    const render: string[] = []
+
+    render.push(`<p class="w-48 mr-4">${highlightProperty(item.Timestamp)}</p>`)
+    render.push(`<p class="w-12 mr-8">${highlightProperty(item.Level)}</p>`)
+    render.push(`<p class="flex-1 mr-12">${highlightProperty(item.Message)}</p>`)
+    render.push(`<p class="w-48 mr-4">${highlightProperty(item.Source)}</p>`)
+
+    return render.join('')
+}
+
+const highlightProperty = (text: string) => {
+    const startIndex = text.indexOf(search.value)
+    if (startIndex === -1 || search.value === '') {
+        return text
+    }
+
+    const endIndex = startIndex + search.value.length
+    const html = `${text.slice(0, startIndex)}<span class="bg-yellow-300">${text.slice(startIndex, endIndex)}</span>${text.slice(endIndex)}`
+    matchesTotal.value.push(html)
+
+    return html
+}
+
+const gotoNextMatch = () => {
+    if (matchCurrent.value + 1 < matchesTotal.value.length) {
+        matchCurrent.value++
+        scrollToCurrentMatch()
+    }
+}
+
+const gotoPrevMatch = () => {
+    if (matchCurrent.value > 0) {
+        matchCurrent.value--
+        scrollToCurrentMatch()
+    }
+}
+
+const scrollToCurrentMatch = () => {
+    const highlights = document.querySelectorAll('.bg-yellow-300')
+    if (highlights.length > 0) {
+        const element = highlights[matchCurrent.value]
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+        highlights.forEach((el, index) => {
+            el.style.backgroundColor = index === matchCurrent.value ? 'orange' : 'yellow'
+        })
+    }
+}
 </script>
