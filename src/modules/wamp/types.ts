@@ -25,7 +25,9 @@ export enum WampSocketSubscribeItemLevel {
 export interface WampSocketOptions {
     baseURL: string
     protocols?: string | string[]
-    timeout?: number
+    timeout: number
+    reconnectTimeout: number
+    heartbeatTimeout: number
 }
 
 export interface WampSocketSubscribeData {
