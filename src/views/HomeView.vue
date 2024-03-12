@@ -42,14 +42,15 @@
                     <Highlighter
                         class="w-48 mr-4"
                         highlightClassName="highlight"
-                        :searchWords="[search]"
+                        :searchWords="search.split(' ')"
                         :autoEscape="true"
                         :textToHighlight="data.Timestamp"
                     />
+
                     <Highlighter
                         class="w-12 mr-8"
                         highlightClassName="highlight"
-                        :searchWords="[search]"
+                        :searchWords="search.split(' ')"
                         :autoEscape="true"
                         :textToHighlight="data.Level"
                     />
@@ -57,14 +58,14 @@
                     <Highlighter
                         class="flex-1 mr-12"
                         highlightClassName="highlight"
-                        :searchWords="[search]"
+                        :searchWords="search.split(' ')"
                         :autoEscape="true"
                         :textToHighlight="data.Message"
                     />
 
                     <Highlighter
                         highlightClassName="highlight"
-                        :searchWords="[search]"
+                        :searchWords="search.split(' ')"
                         :autoEscape="true"
                         :textToHighlight="data.Source"
                     />
